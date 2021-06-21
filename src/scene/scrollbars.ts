@@ -1,111 +1,134 @@
 import { ExcalidrawElement } from "../element/types";
-import { getElementAbsoluteCoords } from "../element";
+import { getCommonBounds } from "../element";
+import { Zoom } from "../types";
+import { ScrollBars } from "./types";
+import { getGlobalCSSVariable } from "../utils";
+import { getLanguage } from "../i18n";
 
-const SCROLLBAR_MIN_SIZE = 15;
-const SCROLLBAR_MARGIN = 4;
+export const SCROLLBAR_MARGIN = 4;
 export const SCROLLBAR_WIDTH = 6;
 export const SCROLLBAR_COLOR = "rgba(0,0,0,0.3)";
 
-export function getScrollBars(
+export const getScrollBars = (
   elements: readonly ExcalidrawElement[],
-  canvasWidth: number,
-  canvasHeight: number,
-  scrollX: number,
-  scrollY: number
-) {
-  let minX = Infinity;
-  let maxX = 0;
-  let minY = Infinity;
-  let maxY = 0;
-
-  elements.forEach(element => {
-    const [x1, y1, x2, y2] = getElementAbsoluteCoords(element);
-    minX = Math.min(minX, x1);
-    minY = Math.min(minY, y1);
-    maxX = Math.max(maxX, x2);
-    maxY = Math.max(maxY, y2);
-  });
-
-  minX += scrollX;
-  maxX += scrollX;
-  minY += scrollY;
-  maxY += scrollY;
-  const leftOverflow = Math.max(-minX, 0);
-  const rightOverflow = Math.max(-(canvasWidth - maxX), 0);
-  const topOverflow = Math.max(-minY, 0);
-  const bottomOverflow = Math.max(-(canvasHeight - maxY), 0);
-
-  // horizontal scrollbar
-  let horizontalScrollBar = null;
-  if (leftOverflow || rightOverflow) {
-    horizontalScrollBar = {
-      x: Math.min(
-        leftOverflow + SCROLLBAR_MARGIN,
-        canvasWidth - SCROLLBAR_MIN_SIZE - SCROLLBAR_MARGIN
-      ),
-      y: canvasHeight - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN,
-      width: Math.max(
-        canvasWidth - rightOverflow - leftOverflow - SCROLLBAR_MARGIN * 2,
-        SCROLLBAR_MIN_SIZE
-      ),
-      height: SCROLLBAR_WIDTH
+  viewportWidth: number,
+  viewportHeight: number,
+  {
+    scrollX,
+    scrollY,
+    zoom,
+  }: {
+    scrollX: number;
+    scrollY: number;
+    zoom: Zoom;
+  },
+): ScrollBars => {
+  if (elements.length === 0) {
+    return {
+      horizontal: null,
+      vertical: null,
     };
   }
+  // This is the bounding box of all the elements
+  const [
+    elementsMinX,
+    elementsMinY,
+    elementsMaxX,
+    elementsMaxY,
+  ] = getCommonBounds(elements);
 
-  // vertical scrollbar
-  let verticalScrollBar = null;
-  if (topOverflow || bottomOverflow) {
-    verticalScrollBar = {
-      x: canvasWidth - SCROLLBAR_WIDTH - SCROLLBAR_MARGIN,
-      y: Math.min(
-        topOverflow + SCROLLBAR_MARGIN,
-        canvasHeight - SCROLLBAR_MIN_SIZE - SCROLLBAR_MARGIN
-      ),
-      width: SCROLLBAR_WIDTH,
-      height: Math.max(
-        canvasHeight - bottomOverflow - topOverflow - SCROLLBAR_WIDTH * 2,
-        SCROLLBAR_MIN_SIZE
-      )
-    };
-  }
+  // Apply zoom
+  const viewportWidthWithZoom = viewportWidth / zoom.value;
+  const viewportHeightWithZoom = viewportHeight / zoom.value;
+
+  const viewportWidthDiff = viewportWidth - viewportWidthWithZoom;
+  const viewportHeightDiff = viewportHeight - viewportHeightWithZoom;
+
+  const safeArea = {
+    top: parseInt(getGlobalCSSVariable("sat")),
+    bottom: parseInt(getGlobalCSSVariable("sab")),
+    left: parseInt(getGlobalCSSVariable("sal")),
+    right: parseInt(getGlobalCSSVariable("sar")),
+  };
+
+  const isRTL = getLanguage().rtl;
+
+  // The viewport is the rectangle currently visible for the user
+  const viewportMinX = -scrollX + viewportWidthDiff / 2 + safeArea.left;
+  const viewportMinY = -scrollY + viewportHeightDiff / 2 + safeArea.top;
+  const viewportMaxX = viewportMinX + viewportWidthWithZoom - safeArea.right;
+  const viewportMaxY = viewportMinY + viewportHeightWithZoom - safeArea.bottom;
+
+  // The scene is the bounding box of both the elements and viewport
+  const sceneMinX = Math.min(elementsMinX, viewportMinX);
+  const sceneMinY = Math.min(elementsMinY, viewportMinY);
+  const sceneMaxX = Math.max(elementsMaxX, viewportMaxX);
+  const sceneMaxY = Math.max(elementsMaxY, viewportMaxY);
+
+  // The scrollbar represents where the viewport is in relationship to the scene
 
   return {
-    horizontal: horizontalScrollBar,
-    vertical: verticalScrollBar
+    horizontal:
+      viewportMinX === sceneMinX && viewportMaxX === sceneMaxX
+        ? null
+        : {
+            x:
+              Math.max(safeArea.left, SCROLLBAR_MARGIN) +
+              ((viewportMinX - sceneMinX) / (sceneMaxX - sceneMinX)) *
+                viewportWidth,
+            y:
+              viewportHeight -
+              SCROLLBAR_WIDTH -
+              Math.max(SCROLLBAR_MARGIN, safeArea.bottom),
+            width:
+              ((viewportMaxX - viewportMinX) / (sceneMaxX - sceneMinX)) *
+                viewportWidth -
+              Math.max(SCROLLBAR_MARGIN * 2, safeArea.left + safeArea.right),
+            height: SCROLLBAR_WIDTH,
+          },
+    vertical:
+      viewportMinY === sceneMinY && viewportMaxY === sceneMaxY
+        ? null
+        : {
+            x: isRTL
+              ? Math.max(safeArea.left, SCROLLBAR_MARGIN)
+              : viewportWidth -
+                SCROLLBAR_WIDTH -
+                Math.max(safeArea.right, SCROLLBAR_MARGIN),
+            y:
+              ((viewportMinY - sceneMinY) / (sceneMaxY - sceneMinY)) *
+                viewportHeight +
+              Math.max(safeArea.top, SCROLLBAR_MARGIN),
+            width: SCROLLBAR_WIDTH,
+            height:
+              ((viewportMaxY - viewportMinY) / (sceneMaxY - sceneMinY)) *
+                viewportHeight -
+              Math.max(SCROLLBAR_MARGIN * 2, safeArea.top + safeArea.bottom),
+          },
   };
-}
+};
 
-export function isOverScrollBars(
-  elements: readonly ExcalidrawElement[],
+export const isOverScrollBars = (
+  scrollBars: ScrollBars,
   x: number,
   y: number,
-  canvasWidth: number,
-  canvasHeight: number,
-  scrollX: number,
-  scrollY: number
-) {
-  const scrollBars = getScrollBars(
-    elements,
-    canvasWidth,
-    canvasHeight,
-    scrollX,
-    scrollY
-  );
-
-  const [isOverHorizontalScrollBar, isOverVerticalScrollBar] = [
+): {
+  isOverEither: boolean;
+  isOverHorizontal: boolean;
+  isOverVertical: boolean;
+} => {
+  const [isOverHorizontal, isOverVertical] = [
     scrollBars.horizontal,
-    scrollBars.vertical
-  ].map(
-    scrollBar =>
-      scrollBar &&
+    scrollBars.vertical,
+  ].map((scrollBar) => {
+    return (
+      scrollBar != null &&
       scrollBar.x <= x &&
       x <= scrollBar.x + scrollBar.width &&
       scrollBar.y <= y &&
       y <= scrollBar.y + scrollBar.height
-  );
-
-  return {
-    isOverHorizontalScrollBar,
-    isOverVerticalScrollBar
-  };
-}
+    );
+  });
+  const isOverEither = isOverHorizontal || isOverVertical;
+  return { isOverEither, isOverHorizontal, isOverVertical };
+};

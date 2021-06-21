@@ -1,61 +1,139 @@
-import { Action } from "./types";
+import React from "react";
 import {
   moveOneLeft,
   moveOneRight,
   moveAllLeft,
-  moveAllRight
+  moveAllRight,
 } from "../zindex";
-import { getSelectedIndices } from "../scene";
-import { META_KEY } from "../keys";
+import { KEYS, isDarwin, CODES } from "../keys";
+import { t } from "../i18n";
+import { getShortcutKey } from "../utils";
+import { register } from "./register";
+import {
+  SendBackwardIcon,
+  BringToFrontIcon,
+  SendToBackIcon,
+  BringForwardIcon,
+} from "../components/icons";
 
-export const actionSendBackward: Action = {
+export const actionSendBackward = register({
   name: "sendBackward",
   perform: (elements, appState) => {
     return {
-      elements: moveOneLeft([...elements], getSelectedIndices(elements)),
-      appState
+      elements: moveOneLeft(elements, appState),
+      appState,
+      commitToHistory: true,
     };
   },
-  contextItemLabel: "Send Backward",
+  contextItemLabel: "labels.sendBackward",
   keyPriority: 40,
-  keyTest: event =>
-    event[META_KEY] && event.shiftKey && event.altKey && event.code === "KeyB"
-};
+  keyTest: (event) =>
+    event[KEYS.CTRL_OR_CMD] &&
+    !event.shiftKey &&
+    event.code === CODES.BRACKET_LEFT,
+  PanelComponent: ({ updateData, appState }) => (
+    <button
+      type="button"
+      className="zIndexButton"
+      onClick={() => updateData(null)}
+      title={`${t("labels.sendBackward")} — ${getShortcutKey("CtrlOrCmd+[")}`}
+    >
+      <SendBackwardIcon theme={appState.theme} />
+    </button>
+  ),
+});
 
-export const actionBringForward: Action = {
+export const actionBringForward = register({
   name: "bringForward",
   perform: (elements, appState) => {
     return {
-      elements: moveOneRight([...elements], getSelectedIndices(elements)),
-      appState
+      elements: moveOneRight(elements, appState),
+      appState,
+      commitToHistory: true,
     };
   },
-  contextItemLabel: "Bring Forward",
+  contextItemLabel: "labels.bringForward",
   keyPriority: 40,
-  keyTest: event =>
-    event[META_KEY] && event.shiftKey && event.altKey && event.code === "KeyF"
-};
+  keyTest: (event) =>
+    event[KEYS.CTRL_OR_CMD] &&
+    !event.shiftKey &&
+    event.code === CODES.BRACKET_RIGHT,
+  PanelComponent: ({ updateData, appState }) => (
+    <button
+      type="button"
+      className="zIndexButton"
+      onClick={() => updateData(null)}
+      title={`${t("labels.bringForward")} — ${getShortcutKey("CtrlOrCmd+]")}`}
+    >
+      <BringForwardIcon theme={appState.theme} />
+    </button>
+  ),
+});
 
-export const actionSendToBack: Action = {
+export const actionSendToBack = register({
   name: "sendToBack",
   perform: (elements, appState) => {
     return {
-      elements: moveAllLeft([...elements], getSelectedIndices(elements)),
-      appState
+      elements: moveAllLeft(elements, appState),
+      appState,
+      commitToHistory: true,
     };
   },
-  contextItemLabel: "Send to Back",
-  keyTest: event => event[META_KEY] && event.shiftKey && event.code === "KeyB"
-};
+  contextItemLabel: "labels.sendToBack",
+  keyTest: (event) =>
+    isDarwin
+      ? event[KEYS.CTRL_OR_CMD] &&
+        event.altKey &&
+        event.code === CODES.BRACKET_LEFT
+      : event[KEYS.CTRL_OR_CMD] &&
+        event.shiftKey &&
+        event.code === CODES.BRACKET_LEFT,
+  PanelComponent: ({ updateData, appState }) => (
+    <button
+      type="button"
+      className="zIndexButton"
+      onClick={() => updateData(null)}
+      title={`${t("labels.sendToBack")} — ${
+        isDarwin
+          ? getShortcutKey("CtrlOrCmd+Alt+[")
+          : getShortcutKey("CtrlOrCmd+Shift+[")
+      }`}
+    >
+      <SendToBackIcon theme={appState.theme} />
+    </button>
+  ),
+});
 
-export const actionBringToFront: Action = {
+export const actionBringToFront = register({
   name: "bringToFront",
   perform: (elements, appState) => {
     return {
-      elements: moveAllRight([...elements], getSelectedIndices(elements)),
-      appState
+      elements: moveAllRight(elements, appState),
+      appState,
+      commitToHistory: true,
     };
   },
-  contextItemLabel: "Bring to Front",
-  keyTest: event => event[META_KEY] && event.shiftKey && event.code === "KeyF"
-};
+  contextItemLabel: "labels.bringToFront",
+  keyTest: (event) =>
+    isDarwin
+      ? event[KEYS.CTRL_OR_CMD] &&
+        event.altKey &&
+        event.code === CODES.BRACKET_RIGHT
+      : event[KEYS.CTRL_OR_CMD] &&
+        event.shiftKey &&
+        event.code === CODES.BRACKET_RIGHT,
+  PanelComponent: ({ updateData, appState }) => (
+    <button
+      type="button"
+      className="zIndexButton"
+      onClick={(event) => updateData(null)}
+      title={`${t("labels.bringToFront")} — ${
+        isDarwin
+          ? getShortcutKey("CtrlOrCmd+Alt+]")
+          : getShortcutKey("CtrlOrCmd+Shift+]")
+      }`}
+    >
+      <BringToFrontIcon theme={appState.theme} />
+    </button>
+  ),
+});

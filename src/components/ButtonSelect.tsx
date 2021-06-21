@@ -1,25 +1,31 @@
 import React from "react";
+import clsx from "clsx";
 
-export function ButtonSelect<T>({
+export const ButtonSelect = <T extends Object>({
   options,
   value,
-  onChange
+  onChange,
+  group,
 }: {
   options: { value: T; text: string }[];
   value: T | null;
   onChange: (value: T) => void;
-}) {
-  return (
-    <div className="buttonList">
-      {options.map(option => (
-        <button
-          key={option.text}
-          onClick={() => onChange(option.value)}
-          className={value === option.value ? "active" : ""}
-        >
-          {option.text}
-        </button>
-      ))}
-    </div>
-  );
-}
+  group: string;
+}) => (
+  <div className="buttonList">
+    {options.map((option) => (
+      <label
+        key={option.text}
+        className={clsx({ active: value === option.value })}
+      >
+        <input
+          type="radio"
+          name={group}
+          onChange={() => onChange(option.value)}
+          checked={value === option.value}
+        />
+        {option.text}
+      </label>
+    ))}
+  </div>
+);

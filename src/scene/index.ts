@@ -1,24 +1,21 @@
 export { isOverScrollBars } from "./scrollbars";
 export {
-  clearSelection,
-  getSelectedIndices,
-  deleteSelectedElements,
-  someElementIsSelected,
+  isSomeElementSelected,
   getElementsWithinSelection,
-  getSelectedAttribute
+  getCommonAttributeOfSelectedElements,
+  getSelectedElements,
+  getTargetElements,
 } from "./selection";
-export {
-  exportCanvas,
-  loadFromJSON,
-  saveAsJSON,
-  restoreFromLocalStorage,
-  saveToLocalStorage
-} from "./data";
+export { calculateScrollCenter } from "./scroll";
 export {
   hasBackground,
-  hasStroke,
+  hasStrokeWidth,
+  hasStrokeStyle,
+  canHaveArrowheads,
+  canChangeSharpness,
   getElementAtPosition,
   getElementContainingPosition,
-  hasText
+  hasText,
+  getElementsAtPosition,
 } from "./comparisons";
-export { createScene } from "./createScene";
+export { getNormalizedZoom, getNewZoom } from "./zoom";
