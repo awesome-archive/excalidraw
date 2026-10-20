@@ -1,23 +1,29 @@
-# Logs
-logs
+.DS_Store
+.env.development.local
+.env.local
+.env.production.local
+.env.test.local
+.envrc
+.eslintcache
+.history
+.idea
+.vercel
+.vscode
+.yarn
 *.log
+*.tgz
+build
+dist
+firebase
+logs
+node_modules
 npm-debug.log*
+package-lock.json
 yarn-debug.log*
 yarn-error.log*
-
-# Build artifacts
-build
-
-# Dependency directories
-node_modules/
-
-# lock file
-yarn.lock
-
-# Editors
-.vscode/
-
-.DS_Store
-
-# build files
-static/
+packages/excalidraw/types
+coverage
+dev-dist
+html
+meta*.json
+.claude
